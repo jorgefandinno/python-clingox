@@ -5,6 +5,32 @@ on:
   - pull_request
 
 jobs:
+  black:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.PAT_POTASSCO_BOT }}
+
+    - name: auto format code
+      uses: psf/black@stable
+      if: github.event_name == 'pull_request'
+      with:
+        options: ""
+        src: "./clingox"
+
+    - name: check code formatting
+      uses: psf/black@stable
+      with:
+        src: "./clingox"
+
+    - name: commit and push auto formatted code
+      uses: stefanzweifel/git-auto-commit-action@v4
+      if: github.event_name == 'pull_request'
+      with:
+        commit_message: auto format source code
+
   build:
     name: clingox using python ${{ matrix.python-version }} on ${{ matrix.os }} installing ${{ matrix.requirements }}
     runs-on: ${{ matrix.os }}
@@ -14,11 +40,13 @@ jobs:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
         python-version: ['3.6', '3.9']
         requirements: ['requirements.txt', 'requirements-stable.txt']
+    needs:
+      - black
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
-    - name: Set up Python
+    - name: set up Python
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
