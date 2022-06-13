@@ -10,8 +10,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-      with:
-        ssh-key: ${{ secrets.PAT_POTASSCO_BOT }}
+      # with:
+      #   ssh-key: ${{ secrets.PAT_POTASSCO_BOT }}
 
     - name: auto format code
       uses: psf/black@stable
