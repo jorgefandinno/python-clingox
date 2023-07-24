@@ -106,7 +106,7 @@ class TestProgram(TestCase):
         self.assertEqual(str(self.prg), prg_str)
 
         if aspif is not None:
-            self.assertEqual(self.prg.aspif(), textwrap.dedent(aspif))
+            self.assertEqual("\n".join(self.prg.aspif()), textwrap.dedent(aspif))
 
         r_prg = _remap(self.prg)
         self.assertEqual(self.prg, r_prg)
@@ -151,6 +151,30 @@ class TestProgram(TestCase):
             4 1 a 1 1
             4 1 b 1 2
             4 1 c 1 3
+            0""",
+        )
+
+    def test_normal_rule2(self):
+        """
+        Test simple rules.
+        """
+        out, out10 = self._add_atoms("a(x)", "b(y)", "c(z)")
+        self.obs.rule(False, [1], [2, -3])
+        self._check(
+            Program(
+                output_atoms=out, rules=[Rule(choice=False, head=[1], body=[2, -3])]
+            ),
+            Program(
+                output_atoms=out10,
+                rules=[Rule(choice=False, head=[11], body=[12, -13])],
+            ),
+            "a(x) :- b(y), not c(z).",
+            """\
+            asp 1 0 0
+            1 0 1 1 0 2 2 -3
+            4 4 a(x) 1 1
+            4 4 b(y) 1 2
+            4 4 c(z) 1 3
             0""",
         )
 

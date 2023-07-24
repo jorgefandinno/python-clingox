@@ -348,7 +348,8 @@ def _aspif_show(stm: Show) -> str:
     """
     Aspif formated show statement.
     """
-    return f"4 {len(stm.symbol.name)} {stm.symbol.name} {_aspif_body(stm.condition)}"
+    symbol_str = str(stm.symbol)
+    return f"4 {len(symbol_str)} {symbol_str} {_aspif_body(stm.condition)}"
 
 
 @remap.register(Show)
@@ -881,9 +882,9 @@ class Program:  # pylint: disable=too-many-instance-attributes
             )
         )
 
-    def aspif(self, sort: bool = True) -> str:
+    def aspif(self, sort: bool = True) -> Iterable[str]:
         """
-        Return a aspif represenation of the program.
+        Return a iterable of strings with the aspif represenation of the program.
 
         Parameters
         ----------
@@ -894,24 +895,23 @@ class Program:  # pylint: disable=too-many-instance-attributes
         -------
         The aspif format representation of the program as a string.
         """
-        return "asp 1 0 0\n" + "\n".join(
-            chain(
-                # self._pretty_stms(self.facts, sort),
-                self._aspif_stms(self.rules, sort),
-                self._aspif_stms(self.weight_rules, sort),
-                self._aspif_stms(self.minimizes, sort),
-                self._aspif_stms((Show(fact.symbol, []) for fact in self.facts), sort),
-                self._aspif_stms(
-                    (Show(s, [a]) for a, s in self.output_atoms.items()), sort
-                ),
-                self._aspif_stms(self.shows, sort),
-                # self._aspif_stms(self.heuristics, sort),
-                # self._aspif_stms(self.edges, sort),
-                # self._aspif_stms(self.externals, sort),
-                # self._pretty_projects(sort),
-                # self._pretty_assumptions(sort),
-                ["0"],
-            )
+        return chain(
+            ["asp 1 0 0"],
+            # self._pretty_stms(self.facts, sort),
+            self._aspif_stms(self.rules, sort),
+            self._aspif_stms(self.weight_rules, sort),
+            self._aspif_stms(self.minimizes, sort),
+            self._aspif_stms((Show(fact.symbol, []) for fact in self.facts), sort),
+            self._aspif_stms(
+                (Show(s, [a]) for a, s in self.output_atoms.items()), sort
+            ),
+            self._aspif_stms(self.shows, sort),
+            # self._aspif_stms(self.heuristics, sort),
+            # self._aspif_stms(self.edges, sort),
+            # self._aspif_stms(self.externals, sort),
+            # self._pretty_projects(sort),
+            # self._pretty_assumptions(sort),
+            ["0"],
         )
 
     def copy(self) -> "Program":
