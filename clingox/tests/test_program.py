@@ -1,6 +1,7 @@
 """
 Test cases for the ground program and observer.
 """
+import textwrap
 from typing import cast
 from unittest import TestCase
 
@@ -90,7 +91,7 @@ class TestProgram(TestCase):
             lit += 1
         return out, out10
 
-    def _check(self, prg, prg10, prg_str):
+    def _check(self, prg, prg10, prg_str, aspif=None):
         """
         Check various ways to remap a program.
 
@@ -100,8 +101,12 @@ class TestProgram(TestCase):
         4. Remapping via remap function without Backend and Control.
         5. Remap a program using the Remapping class.
         """
+        prg_str = textwrap.dedent(prg_str)
         self.assertEqual(self.prg, prg)
         self.assertEqual(str(self.prg), prg_str)
+
+        if aspif is not None:
+            self.assertEqual(self.prg.aspif(), textwrap.dedent(aspif))
 
         r_prg = _remap(self.prg)
         self.assertEqual(self.prg, r_prg)
@@ -140,6 +145,33 @@ class TestProgram(TestCase):
                 rules=[Rule(choice=False, head=[11], body=[12, -13])],
             ),
             "a :- b, not c.",
+            """\
+            asp 1 0 0
+            1 0 1 1 0 2 2 -3
+            4 1 a 1 1
+            4 1 b 1 2
+            4 1 c 1 3""",
+        )
+
+    def test_normal_rule_without_body(self):
+        """
+        Test simple rules without body.
+        """
+        out, out10 = self._add_atoms("a", "b", "c")
+        self.obs.rule(False, [1], [])
+        self._check(
+            Program(output_atoms=out, rules=[Rule(choice=False, head=[1], body=[])]),
+            Program(
+                output_atoms=out10,
+                rules=[Rule(choice=False, head=[11], body=[])],
+            ),
+            "a.",
+            """\
+            asp 1 0 0
+            1 0 1 1 0 0
+            4 1 a 1 1
+            4 1 b 1 2
+            4 1 c 1 3""",
         )
 
     def test_aux_lit(self):
@@ -181,6 +213,12 @@ class TestProgram(TestCase):
             Program(output_atoms=out, facts=[Fact(Function("d"))]),
             Program(output_atoms=out10, facts=[Fact(Function("d"))]),
             "d.",
+            """\
+            asp 1 0 0
+            4 1 d 0
+            4 1 a 1 1
+            4 1 b 1 2
+            4 1 c 1 3""",
         )
 
     def test_add_choice_rule(self):
@@ -197,6 +235,12 @@ class TestProgram(TestCase):
                 output_atoms=out10, rules=[Rule(choice=True, head=[11], body=[12, -13])]
             ),
             "{a} :- b, not c.",
+            """\
+            asp 1 0 0
+            1 1 1 1 0 2 2 -3
+            4 1 a 1 1
+            4 1 b 1 2
+            4 1 c 1 3""",
         )
 
     def test_add_weight_rule(self):
@@ -204,13 +248,13 @@ class TestProgram(TestCase):
         Test weight rules.
         """
         out, out10 = self._add_atoms("a", "b", "c")
-        self.obs.weight_rule(True, [1], 10, [(2, 7), (-3, 5)])
+        self.obs.weight_rule(False, [1], 10, [(2, 7), (-3, 5)])
         self._check(
             Program(
                 output_atoms=out,
                 weight_rules=[
                     WeightRule(
-                        choice=True, head=[1], lower_bound=10, body=[(2, 7), (-3, 5)]
+                        choice=False, head=[1], lower_bound=10, body=[(2, 7), (-3, 5)]
                     )
                 ],
             ),
@@ -218,11 +262,20 @@ class TestProgram(TestCase):
                 output_atoms=out10,
                 weight_rules=[
                     WeightRule(
-                        choice=True, head=[11], lower_bound=10, body=[(12, 7), (-13, 5)]
+                        choice=False,
+                        head=[11],
+                        lower_bound=10,
+                        body=[(12, 7), (-13, 5)],
                     )
                 ],
             ),
-            "{a} :- 10 #sum {7,0: b; 5,1: not c}.",
+            "a :- 10 #sum {7,0: b; 5,1: not c}.",
+            """\
+            asp 1 0 0
+            1 0 1 1 1 10 2 2 7 -3 5
+            4 1 a 1 1
+            4 1 b 1 2
+            4 1 c 1 3""",
         )
 
     def test_add_weight_choice_rule(self):
@@ -249,6 +302,12 @@ class TestProgram(TestCase):
                 ],
             ),
             "{a} :- 10 #sum {7,0: b; 5,1: not c}.",
+            """\
+            asp 1 0 0
+            1 1 1 1 1 10 2 2 7 -3 5
+            4 1 a 1 1
+            4 1 b 1 2
+            4 1 c 1 3""",
         )
 
     def test_add_project(self):
@@ -319,6 +378,12 @@ class TestProgram(TestCase):
                 minimizes=[Minimize(priority=10, literals=[(11, 7), (13, 5)])],
             ),
             "#minimize{7@10,0: a; 5@10,1: c}.",
+            """\
+            asp 1 0 0
+            2 10 2 1 7 3 5
+            4 1 a 1 1
+            4 1 b 1 2
+            4 1 c 1 3""",
         )
 
     def test_add_edge(self):
@@ -377,6 +442,12 @@ class TestProgram(TestCase):
             Program(output_atoms=out, shows=[Show(t, [1])]),
             Program(output_atoms=out10, shows=[Show(t, [11])]),
             "#show t: a.",
+            """\
+            asp 1 0 0
+            4 1 a 1 1
+            4 1 b 1 2
+            4 1 c 1 3
+            4 1 t 1 1""",
         )
 
     def test_control(self):

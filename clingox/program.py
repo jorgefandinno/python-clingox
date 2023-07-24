@@ -119,6 +119,24 @@ def pretty_str(stm, output_atoms: OutputTable) -> str:
 
 
 @singledispatch
+def aspif(stm) -> str:
+    """
+    Aspif formated statements.
+
+    Parameters
+    ----------
+    stm
+        The statement to convert to a aspif.
+
+    Returns
+    -------
+    The string representation of the statement in aspif format.
+    """
+    # pylint: disable=unused-argument
+    assert False, "unexpected type"
+
+
+@singledispatch
 def remap(stm, mapping: AtomMap):
     """
     Remap literals in the given statement with the provided mapping.
@@ -190,6 +208,34 @@ def _pretty_str_rule_head(
         ret += " :- "
 
     return ret
+
+
+def _aspif_head(choice: bool, head: Sequence[Atom]) -> str:
+    """
+    Aspif formed rule head.
+    """
+    choice_code = 1 if choice else 0
+    head_atoms = " ".join(str(atom) for atom in head)
+    aspif_head = f"{len(head)} {head_atoms}"
+
+    return f"{choice_code} {aspif_head}"
+
+
+def _aspif_body_aux(length: int, body: Iterable[str]) -> str:
+    if length <= 0:
+        return "0"
+    body_literals = " ".join(str(lit) for lit in body)
+    return f"{length} {body_literals}"
+
+
+def _aspif_body(body: Sequence[Literal]) -> str:
+    str_body = (str(lit) for lit in body)
+    return _aspif_body_aux(len(body), str_body)
+
+
+def _aspif_weight_body(body: Sequence[Tuple[Literal, Weight]]) -> str:
+    w_body = (f"{lit} {weight}" for lit, weight in body)
+    return _aspif_body_aux(len(body), w_body)
 
 
 def _pretty_str_truth_value(stm: TruthValue):
@@ -297,6 +343,14 @@ def _pretty_str_show(stm: Show, output_atoms: OutputTable) -> str:
     return f'#show {stm.symbol}{": " if body else ""}{body}.'
 
 
+@aspif.register(Show)
+def _aspif_show(stm: Show) -> str:
+    """
+    Aspif formated show statement.
+    """
+    return f"4 {len(stm.symbol.name)} {stm.symbol.name} {_aspif_body(stm.condition)}"
+
+
 @remap.register(Show)
 def _remap_show(stm: Show, mapping: AtomMap) -> Show:
     """
@@ -335,6 +389,16 @@ def _pretty_str_rule(stm: Rule, output_atoms: OutputTable) -> str:
     body = ", ".join(_pretty_str_lit(lit, output_atoms) for lit in stm.body)
 
     return f"{head}{body}."
+
+
+@aspif.register(Rule)
+def _aspif_rule(stm: Rule) -> str:
+    """
+    Aspif formated rule.
+    """
+    head = _aspif_head(stm.choice, stm.head)
+    body = f"0 {_aspif_body(stm.body)}"
+    return f"1 {head} {body}"
 
 
 @remap.register(Rule)
@@ -378,6 +442,16 @@ def _pretty_str_weight_rule(stm: WeightRule, output_atoms: OutputTable) -> str:
     )
 
     return f"{head}{stm.lower_bound} #sum {{{body}}}."
+
+
+@aspif.register(WeightRule)
+def _aspif_weight_rule(stm: WeightRule) -> str:
+    """
+    Aspif formated rule.
+    """
+    head = _aspif_head(stm.choice, stm.head)
+    body = f"1 {stm.lower_bound} {_aspif_weight_body(stm.body)}"
+    return f"1 {head} {body}"
 
 
 @remap.register(WeightRule)
@@ -485,6 +559,14 @@ def _pretty_print_minimize(stm, output_atoms) -> str:
         for i, (literal, weight) in enumerate(stm.literals)
     )
     return f"#minimize{{{body}}}."
+
+
+@aspif.register(Minimize)
+def _aspif_minimize(stm) -> str:
+    """
+    Returns an aspif formated minimize statement.
+    """
+    return f"2 {stm.priority} {_aspif_weight_body(stm.literals)}"
 
 
 @remap.register(Minimize)
@@ -646,6 +728,11 @@ class Program:  # pylint: disable=too-many-instance-attributes
             arg = sorted(arg)
         return (pretty_str(x, self.output_atoms) for x in arg)
 
+    def _aspif_stms(self, arg: Iterable[Statement], sort: bool) -> Iterable[str]:
+        if sort:
+            arg = sorted(arg)
+        return (aspif(x) for x in arg)
+
     def _pretty_assumptions(self, sort: bool) -> Iterable[str]:
         if not self.assumptions:
             return []
@@ -773,7 +860,7 @@ class Program:  # pylint: disable=too-many-instance-attributes
         Parameters
         ----------
         sort
-            Whether to sort the statements in the program befor printing.
+            Whether to sort the statements in the program before printing.
 
         Returns
         -------
@@ -791,6 +878,38 @@ class Program:  # pylint: disable=too-many-instance-attributes
                 self._pretty_stms(self.externals, sort),
                 self._pretty_projects(sort),
                 self._pretty_assumptions(sort),
+            )
+        )
+
+    def aspif(self, sort: bool = True) -> str:
+        """
+        Return a aspif represenation of the program.
+
+        Parameters
+        ----------
+        sort
+            Whether to sort the statements in the program befor printing.
+
+        Returns
+        -------
+        The aspif format representation of the program as a string.
+        """
+        return "asp 1 0 0\n" + "\n".join(
+            chain(
+                # self._pretty_stms(self.facts, sort),
+                self._aspif_stms(self.rules, sort),
+                self._aspif_stms(self.weight_rules, sort),
+                self._aspif_stms(self.minimizes, sort),
+                self._aspif_stms((Show(fact.symbol, []) for fact in self.facts), sort),
+                self._aspif_stms(
+                    (Show(s, [a]) for a, s in self.output_atoms.items()), sort
+                ),
+                self._aspif_stms(self.shows, sort),
+                # self._aspif_stms(self.heuristics, sort),
+                # self._aspif_stms(self.edges, sort),
+                # self._aspif_stms(self.externals, sort),
+                # self._pretty_projects(sort),
+                # self._pretty_assumptions(sort),
             )
         )
 
