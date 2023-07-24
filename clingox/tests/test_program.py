@@ -150,7 +150,8 @@ class TestProgram(TestCase):
             1 0 1 1 0 2 2 -3
             4 1 a 1 1
             4 1 b 1 2
-            4 1 c 1 3""",
+            4 1 c 1 3
+            0""",
         )
 
     def test_normal_rule_without_body(self):
@@ -171,7 +172,8 @@ class TestProgram(TestCase):
             1 0 1 1 0 0
             4 1 a 1 1
             4 1 b 1 2
-            4 1 c 1 3""",
+            4 1 c 1 3
+            0""",
         )
 
     def test_aux_lit(self):
@@ -218,7 +220,8 @@ class TestProgram(TestCase):
             4 1 d 0
             4 1 a 1 1
             4 1 b 1 2
-            4 1 c 1 3""",
+            4 1 c 1 3
+            0""",
         )
 
     def test_add_choice_rule(self):
@@ -240,7 +243,8 @@ class TestProgram(TestCase):
             1 1 1 1 0 2 2 -3
             4 1 a 1 1
             4 1 b 1 2
-            4 1 c 1 3""",
+            4 1 c 1 3
+            0""",
         )
 
     def test_add_weight_rule(self):
@@ -275,7 +279,8 @@ class TestProgram(TestCase):
             1 0 1 1 1 10 2 2 7 -3 5
             4 1 a 1 1
             4 1 b 1 2
-            4 1 c 1 3""",
+            4 1 c 1 3
+            0""",
         )
 
     def test_add_weight_choice_rule(self):
@@ -307,7 +312,8 @@ class TestProgram(TestCase):
             1 1 1 1 1 10 2 2 7 -3 5
             4 1 a 1 1
             4 1 b 1 2
-            4 1 c 1 3""",
+            4 1 c 1 3
+            0""",
         )
 
     def test_add_project(self):
@@ -383,7 +389,8 @@ class TestProgram(TestCase):
             2 10 2 1 7 3 5
             4 1 a 1 1
             4 1 b 1 2
-            4 1 c 1 3""",
+            4 1 c 1 3
+            0""",
         )
 
     def test_add_edge(self):
@@ -447,7 +454,8 @@ class TestProgram(TestCase):
             4 1 a 1 1
             4 1 b 1 2
             4 1 c 1 3
-            4 1 t 1 1""",
+            4 1 t 1 1
+            0""",
         )
 
     def test_control(self):

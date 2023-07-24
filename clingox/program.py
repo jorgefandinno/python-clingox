@@ -910,6 +910,7 @@ class Program:  # pylint: disable=too-many-instance-attributes
                 # self._aspif_stms(self.externals, sort),
                 # self._pretty_projects(sort),
                 # self._pretty_assumptions(sort),
+                ["0"],
             )
         )
 
