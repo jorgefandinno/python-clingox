@@ -216,7 +216,10 @@ def _aspif_head(choice: bool, head: Sequence[Atom]) -> str:
     """
     choice_code = 1 if choice else 0
     head_atoms = " ".join(str(atom) for atom in head)
-    aspif_head = f"{len(head)} {head_atoms}"
+    if len(head) <= 0:
+        aspif_head = "0"
+    else:
+        aspif_head = f"{len(head)} {head_atoms}"
 
     return f"{choice_code} {aspif_head}"
 

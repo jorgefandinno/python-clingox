@@ -101,7 +101,7 @@ class TestProgram(TestCase):
         4. Remapping via remap function without Backend and Control.
         5. Remap a program using the Remapping class.
         """
-        prg_str = textwrap.dedent(prg_str)
+        # prg_str = textwrap.dedent(prg_str)
         self.assertEqual(self.prg, prg)
         self.assertEqual(str(self.prg), prg_str)
 
@@ -479,6 +479,30 @@ class TestProgram(TestCase):
             4 1 b 1 2
             4 1 c 1 3
             4 1 t 1 1
+            0""",
+        )
+
+    def test_constraint(self):
+        """
+        Test constraints rules.
+        """
+        out, out10 = self._add_atoms("a", "b", "c")
+        self.obs.rule(False, [], [2, -3])
+        self._check(
+            Program(
+                output_atoms=out, rules=[Rule(choice=False, head=[], body=[2, -3])]
+            ),
+            Program(
+                output_atoms=out10,
+                rules=[Rule(choice=False, head=[], body=[12, -13])],
+            ),
+            " :- b, not c.",
+            """\
+            asp 1 0 0
+            1 0 0 0 2 2 -3
+            4 1 a 1 1
+            4 1 b 1 2
+            4 1 c 1 3
             0""",
         )
 
